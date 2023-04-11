@@ -1,4 +1,5 @@
 use std::io::{self, prelude::*};
+use std::str;
 use std::process::Stdio;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::{Child, ChildStdin, ChildStdout, Command};
@@ -31,13 +32,16 @@ pub async fn menu() {
                     println!("child status was: {}", status);
                 });
             }
-            "readl" => {
+            "readl" | "readline" => {
                 read_l(&mut reader.as_mut().unwrap()).await;
             }
-            "readu" => {
-                read_until(&mut reader.as_mut().unwrap()).await;
+            // "readu" => {
+                // read_until(&mut reader.as_mut().unwrap()).await;
+            // }
+            "readu" | "readuntil" => {
+                read_till(&mut reader.as_mut().unwrap()).await;
             }
-            "sendl" => {
+            "sendl" | "sendline" => {
                 send_l(&mut stdin.as_mut().unwrap()).await;
             }
             "cyclic" =>{
@@ -76,17 +80,39 @@ async fn start_process() -> Child {
     p
 }
 
-async fn read_until(reader: &mut BufReader<ChildStdout>) -> std::io::Result<()> {
+// async fn read_until(reader: &mut BufReader<ChildStdout>) -> std::io::Result<()> {
+//     let mut input = String::new();
+//     let mut delim: u8 = 0;
+//     println!("Stop at Byte: ");
+//     std::io::stdin().read_line(&mut input).ok().expect("Failed to read line");
+//     delim = input.bytes().nth(0).expect("no byte read"); 
+//     let mut s = vec![];
+//     reader.read_until(delim, &mut s).await?;
+//     for i in s {
+//         print!("{}", i as char);
+//     }
+//     println!();
+//     Ok(())
+// }
+
+async fn read_till(reader: &mut BufReader<ChildStdout>) -> std::io::Result<()> {
     let mut input = String::new();
     let mut delim: u8 = 0;
-    println!("Stop at Byte: ");
+    println!("Stop at String: ");
     std::io::stdin().read_line(&mut input).ok().expect("Failed to read line");
-    delim = input.bytes().nth(0).expect("no byte read"); 
     let mut s = vec![];
-    reader.read_until(delim, &mut s).await?;
-    for i in s {
-        print!("{}", i as char);
+    for i in 0..input.len(){
+            delim = input.bytes().nth(i).expect("no byte read"); 
+            let mut temp = vec![];
+            reader.read_until(delim, &mut temp).await?;
+            for i in temp{
+                s.push(i);
+            }
     }
+    // for i in s {
+    //     print!("{:?}", i as char);
+    // }
+    println!("{}", str::from_utf8(&s).unwrap());
     println!();
     Ok(())
 }
